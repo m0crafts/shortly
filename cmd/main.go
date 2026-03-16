@@ -10,6 +10,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
+	"github.com/m0crafts/url-shortener/internal/shortener"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -55,7 +56,7 @@ func main() {
 
 	// Routes
 	mux := http.NewServeMux()
-
+	log.Printf(shortener.Hash("www.google.com", 0))
 	mux.HandleFunc("POST /generate", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("POST /generate", r.URL.Path)
 	})
