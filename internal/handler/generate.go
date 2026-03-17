@@ -23,7 +23,7 @@ func Generate(store *store.PostgresStore, rdb *redis.Client) http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 
 		if err != nil || body.OriginalUrl == "" {
-			w.WriteHeader(400)
+			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(map[string]string{
 				"message": "Invalid request",
 			})
@@ -32,7 +32,7 @@ func Generate(store *store.PostgresStore, rdb *redis.Client) http.HandlerFunc {
 
 		originalUrl, err := shortener.NormalizeURL(body.OriginalUrl)
 		if err != nil {
-			w.WriteHeader(400)
+			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(map[string]string{
 				"message": "Invalid URL",
 			})
@@ -42,7 +42,7 @@ func Generate(store *store.PostgresStore, rdb *redis.Client) http.HandlerFunc {
 		// Check if already exists in DB
 		shortCode, found := store.FindByOriginal(originalUrl)
 		if found {
-			w.WriteHeader(200)
+			w.WriteHeader(http.StatusOK)
 			json.NewEncoder(w).Encode(map[string]string{
 				"short_code": shortCode,
 			})
@@ -61,7 +61,7 @@ func Generate(store *store.PostgresStore, rdb *redis.Client) http.HandlerFunc {
 		}
 
 		if clash {
-			w.WriteHeader(400)
+			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(map[string]string{
 				"message": "Too many duplicates found [Max Retries Reached]",
 			})
@@ -72,7 +72,7 @@ func Generate(store *store.PostgresStore, rdb *redis.Client) http.HandlerFunc {
 		err = store.Save(shortCode, originalUrl)
 		if err != nil {
 			log.Println(err)
-			w.WriteHeader(500)
+			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{
 				"message": "An error occurred while saving to DB",
 			})
@@ -83,7 +83,7 @@ func Generate(store *store.PostgresStore, rdb *redis.Client) http.HandlerFunc {
 		if err = rdb.Set(r.Context(), shortCode, originalUrl, 0).Err(); err != nil {
 			log.Println("redis cache error:", err)
 		}
-		w.WriteHeader(201)
+		w.WriteHeader(http.StatusCreated)
 		json.NewEncoder(w).Encode(map[string]string{
 			"short_code": shortCode,
 		})

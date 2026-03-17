@@ -61,9 +61,7 @@ func main() {
 
 	mux.Handle("POST /generate", handler.Generate(pgStore, rdb))
 
-	mux.HandleFunc("GET /{code}", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("GET /{code}", r.URL.Path)
-	})
+	mux.HandleFunc("GET /{code}", handler.Redirect(pgStore, rdb))
 
 	// Server
 	addr := fmt.Sprintf(":%s", port)
