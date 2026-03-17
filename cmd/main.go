@@ -10,7 +10,8 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
-	"github.com/m0crafts/url-shortener/internal/shortener"
+	"github.com/m0crafts/url-shortener/internal/handler"
+	"github.com/m0crafts/url-shortener/internal/store"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -43,11 +44,12 @@ func main() {
 
 	defer pool.Close()
 	log.Println("Connected to Postgres")
+	pgStore := store.NewPostgresStore(pool)
 
 	// Redis
 	rdb := redis.NewClient(&redis.Options{Addr: redisURL})
 
-	if err := rdb.Ping(context.Background()).Err(); err != nil {
+	if err = rdb.Ping(context.Background()).Err(); err != nil {
 		log.Fatalf("Could not connect to redis: %s", err)
 	}
 
@@ -56,10 +58,8 @@ func main() {
 
 	// Routes
 	mux := http.NewServeMux()
-	log.Printf(shortener.Hash("www.google.com", 0))
-	mux.HandleFunc("POST /generate", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("POST /generate", r.URL.Path)
-	})
+
+	mux.Handle("POST /generate", handler.Generate(pgStore, rdb))
 
 	mux.HandleFunc("GET /{code}", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("GET /{code}", r.URL.Path)
@@ -68,7 +68,7 @@ func main() {
 	// Server
 	addr := fmt.Sprintf(":%s", port)
 	log.Printf("server starting on %s", addr)
-	if err := http.ListenAndServe(addr, mux); err != nil {
+	if err = http.ListenAndServe(addr, mux); err != nil {
 		log.Fatalf("server error: %v", err)
 	}
 }
