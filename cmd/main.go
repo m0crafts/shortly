@@ -48,7 +48,11 @@ func main() {
 	pgStore := store.NewPostgresStore(pool)
 
 	// Redis
-	rdb := redis.NewClient(&redis.Options{Addr: redisURL})
+	opt, err := redis.ParseURL(redisURL)
+	if err != nil {
+		log.Fatalf("Could not parse Redis URL: %s", err)
+	}
+	rdb := redis.NewClient(opt)
 
 	if err = rdb.Ping(context.Background()).Err(); err != nil {
 		log.Fatalf("Could not connect to redis: %s", err)
