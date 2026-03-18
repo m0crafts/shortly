@@ -1,0 +1,44 @@
+diff --git a/cmd/main.go b/cmd/main.go
+index a5b1616..f3a1cae 100644
+--- a/cmd/main.go
++++ b/cmd/main.go
+@@ -12,6 +12,7 @@ import (
+ 	"github.com/joho/godotenv"
+ 	"github.com/m0crafts/url-shortener/internal/handler"
+ 	"github.com/m0crafts/url-shortener/internal/store"
++	"github.com/m0crafts/url-shortener/middleware"
+ 	"github.com/redis/go-redis/v9"
+ )
+ 
+@@ -66,7 +67,7 @@ func main() {
+ 	// Server
+ 	addr := fmt.Sprintf(":%s", port)
+ 	log.Printf("server starting on %s", addr)
+-	if err = http.ListenAndServe(addr, mux); err != nil {
++	if err = http.ListenAndServe(addr, middleware.SetupCORS(mux)); err != nil {
+ 		log.Fatalf("server error: %v", err)
+ 	}
+ }
+diff --git a/middleware/cors.go b/middleware/cors.go
+index c870d7c..7bcc5d5 100644
+--- a/middleware/cors.go
++++ b/middleware/cors.go
+@@ -1 +1,18 @@
+ package middleware
++
++import "net/http"
++
++func SetupCORS(next http.Handler) http.Handler {
++	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
++		w.Header().Set("Access-Control-Allow-Origin", "*")
++		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
++		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
++
++		if r.Method == http.MethodOptions {
++			w.WriteHeader(http.StatusNoContent)
++			return
++		}
++
++		next.ServeHTTP(w, r)
++	})
++}
