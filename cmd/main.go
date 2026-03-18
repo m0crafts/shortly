@@ -12,6 +12,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/m0crafts/url-shortener/internal/handler"
 	"github.com/m0crafts/url-shortener/internal/store"
+	"github.com/m0crafts/url-shortener/middleware"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -66,7 +67,7 @@ func main() {
 	// Server
 	addr := fmt.Sprintf(":%s", port)
 	log.Printf("server starting on %s", addr)
-	if err = http.ListenAndServe(addr, mux); err != nil {
+	if err = http.ListenAndServe(addr, middleware.SetupCORS(mux)); err != nil {
 		log.Fatalf("server error: %v", err)
 	}
 }
