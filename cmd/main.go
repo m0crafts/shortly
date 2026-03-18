@@ -64,8 +64,9 @@ func main() {
 	// Routes
 	mux := http.NewServeMux()
 
-	mux.Handle("POST /generate", handler.Generate(pgStore, rdb))
-
+	rl := middleware.RateLimit(rdb, 10, time.Minute)
+	mux.Handle("POST /generate", rl(handler.Generate(pgStore, rdb)))
+	
 	mux.HandleFunc("GET /{code}", handler.Redirect(pgStore, rdb))
 
 	// Server
